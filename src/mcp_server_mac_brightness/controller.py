@@ -1,39 +1,36 @@
 import time
 import subprocess
-import ctypes
-
-# 加载 IOKit 框架
-framework = ctypes.cdll.LoadLibrary('/System/Library/Frameworks/IOKit.framework/IOKit')
-
-# 定义函数原型
-framework.IODisplayGetFloatParameter.restype = ctypes.c_int
-framework.IODisplayGetFloatParameter.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_char_p, ctypes.POINTER(ctypes.c_float)]
-framework.IODisplaySetFloatParameter.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_char_p, ctypes.c_float]
 
 class MacController:
     @staticmethod
-    def get_brightness(display_id=0) -> float:
+    def get_brightness() -> float:
         """获取当前亮度"""
-        brightness = ctypes.c_float()
-        framework.IODisplayGetFloatParameter(None, display_id, b"brightness", ctypes.byref(brightness))
-        return brightness.value * 100
+        try:
+            result = subprocess.run(['brightness', '-l'], capture_output=True, text=True)
+            # 解析输出中的亮度值，格式如: "display 0: brightness 0.956055"
+            brightness_line = [line for line in result.stdout.split('\n') if 'brightness' in line][0]
+            brightness_value = float(brightness_line.split()[-1])
+            return brightness_value * 100
+        except Exception:
+            return 0
 
     @staticmethod
     def set_brightness(level: float, duration: float = 0) -> None:
         """设置屏幕亮度"""
-        target = max(5, min(level, 100)) / 100
+        target = max(5, min(level, 100)) / 100  # 转换为 0-1 范围
         
         if duration <= 0:
-            framework.IODisplaySetFloatParameter(None, 0, b"brightness", target)
+            subprocess.run(['brightness', '-m', str(target)])
             return
             
+        # 渐变效果
         current = MacController.get_brightness() / 100
         steps = int(duration * 4)
         delta = (target - current) / steps
         
         for _ in range(steps):
             current += delta
-            framework.IODisplaySetFloatParameter(None, 0, b"brightness", current)
+            subprocess.run(['brightness', '-m', str(current)])
             time.sleep(0.25)
 
     @staticmethod

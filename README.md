@@ -19,6 +19,10 @@ A Model Context Protocol server for controlling Mac screen brightness and system
 - Python >= 3.10
 - macOS (uses native macOS frameworks)
 - Required permissions for screen and audio control
+- brightness (Install via Homebrew):
+  ```bash
+  brew install brightness
+  ```
 
 ## Installation
 
@@ -55,8 +59,8 @@ Configure in Claude desktop:
 ```json
 {
     "mac_brightness": {
-        "command": "uv",
-        "args": ["run", "/absolute/path/to/src/mcp_server_mac_brightness/server.py"]
+        "command": "uvx",
+        "args": ["mcp-server-mac-brightness"]
     }
 }
  ```
